@@ -1,0 +1,44 @@
+<script>
+  import { supabase } from '../../supabase';
+  import { onMount } from 'svelte';
+  
+  let title = '';
+  let content = '';
+  let tags = '';
+  let errorMessage = '';
+
+  const handleSubmit = async () => {
+    if (!title || !content) {
+      errorMessage = 'Title and content are required';
+      return;
+    }
+    
+    const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
+    const { data, error } = await supabase.from('posts').insert([
+      { title, slug, content, tags: tags.split(','), created_at: new Date() }
+    ]);
+    
+    if (error) {
+      errorMessage = error.message;
+    } else {
+      // Redirect to the newly created post page
+      window.location.href = `/post/${slug}`;
+    }
+  };
+</script>
+
+<h1 class="text-4xl font-bold mb-6">Create New Post</h1>
+<form class="space-y-4">
+  <input type="text" class="w-full p-2 border rounded" placeholder="Title" bind:value={title} />
+  <textarea class="w-full p-2 border rounded" rows="10" placeholder="Write your post in Markdown" bind:value={content}></textarea>
+  <input type="text" class="w-full p-2 border rounded" placeholder="Tags (comma separated)" bind:value={tags} />
+  {#if errorMessage}
+    <div class="text-red-500">{errorMessage}</div>
+  {/if}
+  <button type="button" class="bg-blue-500 text-white p-2 rounded" on:click={handleSubmit}>Publish</button>
+</form>
+
+<h2 class="text-xl mt-6">Preview</h2>
+<div class="prose max-w-none mt-4">
+  {@html content}
+</div>
